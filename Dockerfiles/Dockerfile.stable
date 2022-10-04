@@ -3,21 +3,30 @@ LABEL org.opencontainers.image.authors="cytopia@everythingcli.org"
 
 ENV \
 	USER=bind \
-	GROUP=bind
+	GROUP=bind \
+	TERM=xterm
 
 ###
 ### Install
-###
+### 
 RUN set -eux \
 	&& apt update \
+	&& apt install software-properties-common gnupg apt-transport-https lsb-release ca-certificates curl -y\
+	&& curl -sSLo /usr/share/keyrings/deb.sury.org-bind.gpg https://packages.sury.org/bind/apt.gpg \
+	&& sh -c 'echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-bind.gpg] https://packages.sury.org/bind/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/bind.list' \
+	&& apt update \
 	&& apt install --no-install-recommends --no-install-suggests -y \
-		bind9 \
+	bind9 \
+	openssl \
 	&& apt purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
 	&& rm -r /var/lib/apt/lists/* \
 	&& mkdir /var/log/named \
 	&& chown bind:bind /var/log/named \
-	&& chmod 0755 /var/log/named
-
+	&& chmod 0755 /var/log/named \
+	&& openssl req -x509 -nodes -subj '/CN=bind9.local' -newkey rsa:4096 -keyout /etc/ssl/private/dns.key -out /etc/ssl/certs/dns.pem -sha256 -days 3650 \
+	&& chmod 0755 /etc/ssl/certs \
+	&& chgrp bind /etc/ssl/private/dns.key \
+	&& chmod 0640 /etc/ssl/private/dns.key
 
 ###
 ### Bootstrap Scipts
@@ -31,8 +40,11 @@ COPY ./data/docker-entrypoint.sh /
 EXPOSE 53
 EXPOSE 53/udp
 
+EXPOSE 80
+EXPOSE 443
 
 ####
 #### Entrypoint
 ####
 ENTRYPOINT ["/docker-entrypoint.sh"]
+#CMD ["bash"]

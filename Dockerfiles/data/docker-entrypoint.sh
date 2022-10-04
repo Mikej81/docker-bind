@@ -78,6 +78,12 @@ DEFAULT_EXPIRY_TIME=1209600
 DEFAULT_MAX_CACHE_TIME=10800
 DEFAULT_MAX_CACHE_SIZE="90%"
 
+###
+### Default TLS variables
+###
+DEFAULT_TLS_KEY="/etc/ssl/private/dns.key"
+DEFAULT_TLS_CERT="/etc/ssl/certs/dns.pem"
+
 
 
 ####################################################################################################
@@ -289,11 +295,25 @@ add_options() {
 	local max_cache_size="${7}"
 
 	{
+		#echo "tls local-tls {"
+		#echo "	key-file \"${DEFAULT_TLS_KEY}\";"
+		#echo "	cert-file \"${DEFAULT_TLS_CERT}\";"
+		#echo "};"
+
+		echo "http local {"
+		echo "	endpoints { \"/dns-query\"; };"
+		echo "};"
+
 		echo "options {"
 		echo "    directory \"/var/cache/bind\";"
 		echo "    dnssec-validation ${dnssec_validate};"
 		echo "    auth-nxdomain no;    # conform to RFC1035"
-		echo "    listen-on-v6 { any; };"
+		echo "    listen-on port 53 { any; };"
+		echo "    http-port 80;"
+		echo "    https-port 443;"
+		echo "    listen-on port 443 tls ephemeral http local { any; };"
+		echo "    listen-on port 80 tls none http local { any; };"
+
 		echo "    max-cache-size ${max_cache_size};"
 		if [ -n "${response_policy}" ]; then
 			echo "    response-policy { zone \"${response_policy}\"; };"
