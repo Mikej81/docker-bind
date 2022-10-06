@@ -1,5 +1,5 @@
 FROM debian:stable-slim
-LABEL org.opencontainers.image.authors="cytopia@everythingcli.org"
+LABEL org.opencontainers.image.authors="michael@f5.com"
 
 ENV \
 	USER=bind \
